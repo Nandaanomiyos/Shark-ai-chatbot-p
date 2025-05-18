@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot shark Pintar</title>
+    <style>
+        :root {
+            --primary-color: #4285f4;
+            --secondary-color: #f1f1f1;
+            --user-color: #e3f2fd;
+            --bot-color: #f8f9fa;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+            padding: 0;
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 15px 20px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .chat-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background-color: white;
+            margin: 10px;
+            border-radius: 10px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .message {
+            margin-bottom: 15px;
+            max-width: 80%;
+            padding: 10px 15px;
+            border-radius: 18px;
+            position: relative;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .user-message {
+            background-color: var(--user-color);
+            margin-left: auto;
+            border-bottom-right-radius: 5px;
+        }
+        
+        .bot-message {
+            background-color: var(--bot-color);
+            margin-right: auto;
+            border-bottom-left-radius: 5px;
+        }
+        
+        .input-area {
+            display: flex;
+            padding: 10px;
+            background-color: white;
+            border-top: 1px solid #ddd;
+        }
+        
+        #user-input {
+            flex: 1;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 25px;
+            outline: none;
+            font-size: 16px;
+        }
+        
+        #send-button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            margin-left: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .typing-indicator {
+            display: inline-block;
+            padding: 10px 15px;
+            background-color: var(--bot-color);
+            border-radius: 18px;
+            margin-bottom: 15px;
+        }
+        
+        .typing-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background-color: #666;
+            border-radius: 50%;
+            margin: 0 2px;
+            animation: typingAnimation 1.4s infinite ease-in-out;
+        }
+        
+        .typing-dot:nth-child(1) { animation-delay: 0s; }
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+        
+        @keyframes typingAnimation {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-5px); }
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @media (max-width: 600px) {
+            .message {
+                max-width: 90%;
+            }
+            
+            #user-input {
+                padding: 10px 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Chatbot shark 🦈 </h1>
+    </div>
+    
+    <div class="chat-container" id="chat-log">
+        <!-- Pesan akan muncul di sini -->
+    </div>
+    
+    <div class="input-area">
+        <input type="text" id="user-input" placeholder="Tanyakan apa saja..." autocomplete="off">
+        <button id="send-button">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="22" y1="2" x2="11" y2="13"></line>
+                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+            </svg>
+        </button>
+    </div>
+
+    <script>
+        // Enhanced knowledge base
+        const knowledgeBase = {
+            "siapa kamu": {
+                responses: [
+                    "Aku adalah asisten virtual cerdas yang bisa membantumu mencari informasi akualah shark!",
+                    "Aku chatbot shark yang siap menjawab pertanyaanmu.",
+                    "Aku teman bicara digital shark."
+                ],
+                followUp: "Ada topik khusus yang ingin kamu pelajari?"
+            },
+            "apa kabar": {
+                responses: [
+                    "Aku baik-baik saja, terima kasih sudah bertanya!",
+                    "Sangat bersemangat membantumu hari ini!",
+                    "Siap sedia membantu kamu!"
+                ],
+                followUp: "Bagaimana dengan harimu?"
+            },
+            "terima kasih": {
+                responses: [
+                    "Sama-sama! Senang bisa membantu.",
+                    "Dengan senang hati!",
+                    "Terima kasih sudah bertanya 😊"
+                ],
+                followUp: "Ada lagi yang bisa kubantu?"
+            },
+            "halo|hai|hi|hello": {
+                responses: [
+                    "Halo juga! Ada yang bisa kubantu?",
+                    "Hai! Senang bertemu denganmu.",
+                    "Halo! Tanyakan apa saja padaku."
+                ],
+                followUp: "Kamu ingin tahu tentang apa hari ini?"
+            },
+            "keluar|exit|bye|dadah": {
+                responses: [
+                    "Sampai jumpa lagi! Semoga harimu menyenangkan.",
+                    "Dadah! Jangan ragu untuk kembali nanti.",
+                    "Sampai bertemu lagi. Terima kasih sudah mengobrol!"
+                ],
+                followUp: null
+            }
+        };
+
+        // Advanced question patterns
+        const questionPatterns = [
+            // Format: "Apa yang dimaksud dengan X"
+            { 
+                pattern: /(apa|apakah)\s+yang\s+di\s+maksud\s+(dengan)?\s*(.*)/i, 
+                extract: match => match[4],
+                response: (keyword, answer) => `${keyword} adalah ${answer}`
+            },
+            // Format: "Apa itu X"
+            { 
+                pattern: /(apa|apakah)\s*(itu|sih)?\s*(.*)/i, 
+                extract: match => match[3],
+                response: (keyword, answer) => `${keyword} adalah ${answer}`
+            },
+            // Format: "Definisi X"
+            { 
+                pattern: /(definisi|pengertian)\s*(dari)?\s*(.*)/i, 
+                extract: match => match[3],
+                response: (keyword, answer) => `Definisi ${keyword} adalah ${answer}`
+            },
+            // Format: "Jelaskan tentang X"
+            { 
+                pattern: /(jelaskan|ceritakan)\s*(tentang)?\s*(.*)/i, 
+                extract: match => match[3],
+                response: (keyword, answer) => `Penjelasan tentang ${keyword}: ${answer}`
+            },
+            // Format: "X adalah"
+            { 
+                pattern: /(.*)\s+adalah\s*$/i, 
+                extract: match => match[1],
+                response: (keyword, answer) => answer
+            },
+            // Default pattern
+            { 
+                pattern: /(.*)/i, 
+                extract: match => match[1],
+                response: (keyword, answer) => answer.startsWith(keyword) ? answer : `${keyword}: ${answer}`
+            }
+        ];
+
+        // Conversation context
+        let conversationContext = {
+            lastTopic: null,
+            lastQuestion: null,
+            lastKeywords: null
+        };
+
+        // DOM elements
+        const chatLog = document.getElementById('chat-log');
+        const userInput = document.getElementById('user-input');
+        const sendButton = document.getElementById('send-button');
+
+        // Add message to chat
+        function addMessage(sender, message) {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message', sender + '-message');
+            messageDiv.innerHTML = message.replace(/\n/g, '<br>');
+            chatLog.appendChild(messageDiv);
+            chatLog.scrollTop = chatLog.scrollHeight;
+        }
+
+        // Show typing indicator
+        function showTypingIndicator() {
+            const typingDiv = document.createElement('div');
+            typingDiv.classList.add('typing-indicator');
+            typingDiv.id = 'typing-indicator';
+            typingDiv.innerHTML = `
+                <span class="typing-dot"></span>
+                <span class="typing-dot"></span>
+                <span class="typing-dot"></span>
+            `;
+            chatLog.appendChild(typingDiv);
+            chatLog.scrollTop = chatLog.scrollHeight;
+        }
+
+        // Hide typing indicator
+        function hideTypingIndicator() {
+            const typingIndicator = document.getElementById('typing-indicator');
+            if (typingIndicator) {
+                typingIndicator.remove();
+            }
+        }
+
+        // Normalize question
+        function normalizeQuestion(question) {
+            return question.toLowerCase().trim()
+                .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?]/g, '')
+                .replace(/\s\s+/g, ' ');
+        }
+
+        // Match against knowledge base
+        function matchKnowledgeBase(question) {
+            const normalizedQuestion = normalizeQuestion(question);
+            
+            for (const [pattern, data] of Object.entries(knowledgeBase)) {
+                if (new RegExp(pattern).test(normalizedQuestion)) {
+                    return {
+                        response: data.responses[Math.floor(Math.random() * data.responses.length)],
+                        followUp: data.followUp
+                    };
+                }
+            }
+            
+            return null;
+        }
+
+        // Extract keywords from question
+        function extractKeywords(question) {
+            for (const {pattern, extract} of questionPatterns) {
+                const match = question.match(pattern);
+                if (match && extract(match).trim()) {
+                    return extract(match).trim();
+                }
+            }
+            return question.trim();
+        }
+
+        // Get answer from Wikipedia
+        async function getWikipediaAnswer(keyword, isFollowUp = false) {
+            if (!keyword) return null;
+            
+            try {
+                // Try to get summary
+                const response = await fetch(`https://id.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(keyword)}`);
+                
+                if (!response.ok) {
+                    // Try search if page not found
+                    const searchResponse = await fetch(`https://id.wikipedia.org/w/api.php?action=opensearch&search=${encodeURIComponent(keyword)}&limit=3&namespace=0&format=json&origin=*`);
+                    
+                    if (searchResponse.ok) {
+                        const searchData = await searchResponse.json();
+                        if (searchData[1].length > 0) {
+                            return {
+                                answer: `Aku tidak menemukan halaman tepat untuk "${keyword}". Mungkin maksudmu: ${searchData[1].join(', ')}?`,
+                                suggestions: searchData[1]
+                            };
+                        }
+                    }
+                    return null;
+                }
+                
+                const data = await response.json();
+                let answer = data.extract;
+                
+                if (answer) {
+                    // Update conversation context
+                    conversationContext.lastTopic = data.title || keyword;
+                    conversationContext.lastKeywords = keyword;
+                    
+                    return {
+                        answer: answer,
+                        title: data.title
+                    };
+                }
+                
+                return null;
+            } catch (error) {
+                console.error('Error fetching Wikipedia:', error);
+                return null;
+            }
+        }
+
+        // Format answer based on question pattern
+        function formatAnswer(keyword, answer, questionPattern) {
+            if (!answer) return null;
+            
+            const fullAnswer = typeof answer === 'string' ? answer : answer.answer;
+            const formattedAnswer = questionPattern.response(keyword, fullAnswer);
+            
+            // Capitalize first letter
+            return formattedAnswer.charAt(0).toUpperCase() + formattedAnswer.slice(1);
+        }
+
+        // Handle user input
+        async function handleUserInput() {
+            const question = userInput.value.trim();
+            if (!question) return;
+            
+            // Add user message
+            addMessage('user', question);
+            userInput.value = '';
+            
+            // Show typing indicator
+            showTypingIndicator();
+            
+            // Simulate thinking
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            // Check knowledge base first
+            const knowledgeMatch = matchKnowledgeBase(question);
+            if (knowledgeMatch) {
+                hideTypingIndicator();
+                addMessage('bot', knowledgeMatch.response);
+                if (knowledgeMatch.followUp) {
+                    await new Promise(resolve => setTimeout(resolve, 800));
+                    addMessage('bot', knowledgeMatch.followUp);
+                }
+                return;
+            }
+            
+            // Find matching question pattern
+            let matchedPattern = questionPatterns[questionPatterns.length - 1]; // Default pattern
+            for (const pattern of questionPatterns) {
+                if (question.match(pattern.pattern)) {
+                    matchedPattern = pattern;
+                    break;
+                }
+            }
+            
+            // Extract keywords
+            const keyword = extractKeywords(question);
+            
+            // Get answer from Wikipedia
+            const answer = await getWikipediaAnswer(keyword, conversationContext.lastTopic === keyword);
+            
+            hideTypingIndicator();
+            
+            if (answer) {
+                const formattedAnswer = formatAnswer(keyword, answer, matchedPattern);
+                addMessage('bot', formattedAnswer);
+                
+                // Add follow-up question
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                addMessage('bot', "Apakah kamu ingin tahu lebih banyak tentang ini?");
+            } else {
+                const fallbackResponses = [
+                    `Maaf, aku tidak menemukan informasi tentang "${keyword}". Bisakah kamu memberikan lebih banyak detail?`,
+                    `Sepertinya aku belum tahu tentang "${keyword}". Mungkin coba tanyakan dengan cara yang berbeda?`,
+                    `Aku belum menemukan jawaban untuk pertanyaanmu. Ada pertanyaan lain yang bisa kubantu?`
+                ];
+                addMessage('bot', fallbackResponses[Math.floor(Math.random() * fallbackResponses.length)]);
+            }
+        }
+
+        // Event listeners
+        sendButton.addEventListener('click', handleUserInput);
+        userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') handleUserInput();
+        });
+
+        // Initial message
+        setTimeout(() => {
+            addMessage('bot', "Halo! Aku chatbot SHARK 🦈 yang siap membantumu menemukan informasi. Tanyakan apa saja padaku!");
+        }, 500);
+    </script>
+</body>
+  </html>
